@@ -11,3 +11,6 @@ modernboot-shared = { path = "../shared" }
 modernboot-installer = { path = "../installer-core" }
 env_logger = "0.11"
 log = "0.4"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"

@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-uefi
+
+      - name: Run unit tests
+        run: cargo test -p modernboot-shared -p modernboot-installer
+
+      - name: Build UEFI bootloader
+        run: cargo build -p modernboot-efi --target x86_64-unknown-uefi --release
+
+      - name: Build Windows desktop app
+        run: cargo build -p modernboot-app --release
+
+      - name: Prepare portable binary
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item target/release/modernboot-app.exe dist/ModernBoot-x64-portable.exe
+          Copy-Item target/x86_64-unknown-uefi/release/modernboot-efi.efi dist/modernboot-efi.efi
+
+      - name: Build Windows Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+            choco install innosetup -y --no-progress
+          }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) {
+            $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          }
+          & $iscc installer/windows/modernboot.iss
+
+      - name: Upload Windows release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/*
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-uefi
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev libgtk-3-dev
+
+      - name: Build UEFI bootloader
+        run: cargo build -p modernboot-efi --target x86_64-unknown-uefi --release
+
+      - name: Build Linux desktop app
+        run: cargo build -p modernboot-app --release
+
+      - name: Prepare Linux binary
+        run: |
+          mkdir -p dist
+          cp target/release/modernboot-app dist/modernboot-linux-x64
+
+      - name: Upload Linux release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: dist/modernboot-linux-x64
+
+  publish-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/release-windows/*
+            artifacts/release-linux/*

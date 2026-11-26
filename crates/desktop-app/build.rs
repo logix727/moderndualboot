@@ -34,4 +34,27 @@ fn main() {
             efi_path.display()
         );
     }
+
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        let icon_path = workspace_root.join("assets").join("modernboot.ico");
+        println!("cargo:rerun-if-changed={}", icon_path.display());
+        let mut res = winres::WindowsResource::new();
+        if icon_path.exists() {
+            res.set_icon(icon_path.to_str().expect("valid utf-8 icon path"));
+        }
+        res.set("ProductName", "ModernBoot");
+        res.set("FileDescription", "ModernBoot UEFI Dual-Boot Manager & Installer");
+        res.set_manifest(
+            r#"<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="highestAvailable" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>"#,
+        );
+        res.compile().expect("failed to compile Windows resources");
+    }
 }
