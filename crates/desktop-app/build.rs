@@ -35,6 +35,7 @@ fn main() {
         );
     }
 
+    #[cfg(windows)]
     if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         let icon_path = workspace_root.join("assets").join("modernboot.ico");
         println!("cargo:rerun-if-changed={}", icon_path.display());
