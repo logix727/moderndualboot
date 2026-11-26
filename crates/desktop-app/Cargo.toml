@@ -1,0 +1,13 @@
+[package]
+name = "modernboot-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Cross-platform desktop manager and live boot screen previewer for ModernDualBoot"
+
+[dependencies]
+eframe = "0.30"
+modernboot-shared = { path = "../shared" }
+modernboot-installer = { path = "../installer-core" }
+env_logger = "0.11"
+log = "0.4"

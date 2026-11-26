@@ -1,0 +1,11 @@
+[package]
+name = "modernboot-efi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+modernboot-shared = { path = "../shared" }
+uefi = { version = "0.35", features = ["alloc", "panic_handler", "global_allocator"] }
+log = { version = "0.4", default-features = false }

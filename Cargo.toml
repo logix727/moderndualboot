@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/shared",
+    "crates/bootloader",
+    "crates/installer-core",
+    "crates/desktop-app",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/logix727/moderndualboot"
+
+[workspace.dependencies]
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
